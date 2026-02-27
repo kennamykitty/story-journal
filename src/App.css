@@ -294,6 +294,22 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .editor-title::placeholder { color: var(--border); }
 
+.editor-date {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  width: fit-content;
+}
+.editor-date::-webkit-calendar-picker-indicator {
+  opacity: 0.4;
+  cursor: pointer;
+}
+
 .editor-textarea {
   flex: 1;
   min-height: 480px;

@@ -163,9 +163,15 @@ function HomeView({ onNewEntry, onBrowse }) {
 
 const TIMER_OPTIONS = [5, 10, 15, 20]
 
+function todayValue() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
 function EditorView({ prompt, onSave, onBack }) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
+  const [entryDate, setEntryDate] = useState(todayValue)
   const [saved, setSaved] = useState(false)
   const [showPrompt, setShowPrompt] = useState(!!prompt)
   const [showTimerPicker, setShowTimerPicker] = useState(false)
@@ -177,13 +183,14 @@ function EditorView({ prompt, onSave, onBack }) {
   function handleSave() {
     if (!content.trim()) return
     const entries = getEntries()
+    const createdAt = new Date(entryDate + 'T12:00:00').toISOString()
     const now = new Date().toISOString()
     const entry = {
       id: Date.now().toString(),
-      title: title.trim() || formatDate(now),
+      title: title.trim() || formatDate(createdAt),
       content: content.trim(),
       prompt: prompt || null,
-      createdAt: now,
+      createdAt,
       updatedAt: now,
     }
     saveEntries([entry, ...entries])
@@ -263,6 +270,12 @@ function EditorView({ prompt, onSave, onBack }) {
           placeholder="Title (optional)"
           value={title}
           onChange={e => setTitle(e.target.value)}
+        />
+        <input
+          className="editor-date"
+          type="date"
+          value={entryDate}
+          onChange={e => setEntryDate(e.target.value)}
         />
         <textarea
           ref={textareaRef}
