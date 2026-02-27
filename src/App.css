@@ -183,65 +183,75 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .section-title { font-family: var(--font-serif); font-size: 26px; font-weight: normal; letter-spacing: -0.3px; }
 .section-subtitle { font-size: 14px; color: var(--muted); font-style: italic; }
 
-/* ── Story Receipt ──────────────────────────────────────────── */
-.receipt-capture {
+/* ── Morning Pages description ──────────────────────────────── */
+.morning-pages-desc {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 24px;
+  padding: 24px 28px;
 }
-
-.receipt-timestamp { font-size: 13px; color: var(--muted); }
-
-.receipt-textarea {
-  width: 100%;
-  min-height: 160px;
-  border: none;
-  outline: none;
-  background: transparent;
-  resize: none;
+.morning-pages-desc p {
   font-family: var(--font-serif);
-  font-size: 17px;
+  font-size: 16px;
   line-height: 1.75;
   color: var(--text);
 }
-.receipt-textarea.over-limit { color: var(--danger); }
-.receipt-textarea::placeholder { color: var(--border); }
 
-.receipt-footer {
+.duration-label { font-size: 14px; color: var(--muted); margin-bottom: 14px; }
+
+/* ── Writing Prompts ────────────────────────────────────────── */
+.prompt-display {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.prompt-display-text {
+  font-family: var(--font-serif);
+  font-size: 22px;
+  line-height: 1.55;
+  color: var(--text);
+}
+.btn-refresh-prompt {
+  font-size: 13px;
+  color: var(--muted);
+  align-self: flex-start;
+  padding: 4px 0;
+  transition: color 0.15s;
+}
+.btn-refresh-prompt:hover { color: var(--accent); }
+
+.prompt-write-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.prompt-textarea { min-height: 220px !important; }
+
+.prompt-write-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-top: 12px;
-  border-top: 1px solid var(--border);
 }
 
-.word-counter { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.word-counter.over-limit { color: var(--danger); font-weight: 600; }
+.saved-badge { font-size: 13px; color: var(--success); }
 
 /* ── Log shared styles ──────────────────────────────────────── */
 .log-section { display: flex; flex-direction: column; gap: 16px; }
 .log-heading { font-family: var(--font-serif); font-size: 18px; font-weight: normal; color: var(--muted); }
 
-.receipt-log { display: flex; flex-direction: column; gap: 16px; }
-
-.receipt-item {
-  border-left: 2px solid var(--border);
-  padding: 4px 0 4px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.receipt-item-meta { font-size: 12px; color: var(--muted); }
-.receipt-item-text { font-family: var(--font-serif); font-size: 15px; line-height: 1.7; color: var(--text); }
-
 /* ── Homework ───────────────────────────────────────────────── */
 .hw-form { display: flex; flex-direction: column; gap: 28px; }
-.hw-question-block { display: flex; flex-direction: column; gap: 10px; }
+
+.hw-step { display: flex; flex-direction: column; gap: 8px; }
 .hw-question { font-family: var(--font-serif); font-size: 19px; line-height: 1.45; color: var(--text); }
+.hw-hint { font-size: 13px; color: var(--muted); line-height: 1.55; font-style: italic; }
 
 .hw-textarea {
   width: 100%;
@@ -260,18 +270,20 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 .hw-textarea:focus { border-color: var(--muted); }
 .hw-textarea::placeholder { color: var(--border); }
+.hw-textarea-tall { min-height: 200px; }
 
 .hw-entry-display {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 24px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 20px;
 }
-.hw-moment-text { font-family: var(--font-serif); font-size: 18px; line-height: 1.65; color: var(--text); }
-.hw-why-text { font-family: var(--font-serif); font-size: 15px; line-height: 1.65; color: var(--muted); font-style: italic; }
+.hw-display-block { display: flex; flex-direction: column; gap: 8px; }
+.hw-display-text { font-family: var(--font-serif); font-size: 16px; line-height: 1.75; color: var(--text); }
+.hw-story-text { font-size: 17px; }
 
 /* ── Calendar ───────────────────────────────────────────────── */
 .calendar {
@@ -367,8 +379,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   border-bottom: 1px solid var(--border);
 }
 .entry-log-item:last-child { border-bottom: none; }
-.entry-log-date { font-size: 13px; color: var(--muted); }
-.entry-log-words { font-size: 13px; color: var(--muted); }
+.entry-log-meta { display: flex; gap: 12px; }
+.entry-log-meta span { font-size: 13px; color: var(--muted); }
 .entry-log-prompt { font-size: 13px; color: var(--muted); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .timed-prompt-bar {

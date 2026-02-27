@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
-import { tips, memoryPrompts } from './data/prompts'
+import { tips, journalPrompts } from './data/prompts'
 import './App.css'
 
 // ── Storage ────────────────────────────────────────────────────────────
 
 const KEYS = {
-  receipts: 'sj-receipts',
+  pages:    'sj-pages',
+  prompts:  'sj-prompts',
   homework: 'sj-homework',
-  journal:  'story-journal-entries',
 }
 
 function load(key) {
@@ -18,11 +18,6 @@ function save(key, value) {
 }
 
 // ── Utilities ──────────────────────────────────────────────────────────
-
-function randomFrom(arr, exclude) {
-  const pool = exclude ? arr.filter(p => p !== exclude) : arr
-  return pool[Math.floor(Math.random() * pool.length)]
-}
 
 function wordCount(text) {
   return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
@@ -61,19 +56,24 @@ function getStreak(entries) {
   return streak
 }
 
+function randomPrompt(exclude) {
+  const pool = exclude !== null ? journalPrompts.filter(p => p !== exclude) : journalPrompts
+  return pool[Math.floor(Math.random() * pool.length)]
+}
+
 // ── Backup ─────────────────────────────────────────────────────────────
 
 function exportBackup() {
   const data = {
-    receipts: load(KEYS.receipts),
+    pages:    load(KEYS.pages),
+    prompts:  load(KEYS.prompts),
     homework: load(KEYS.homework),
-    journal:  load(KEYS.journal),
     exportedAt: new Date().toISOString(),
   }
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
+  const url  = URL.createObjectURL(blob)
+  const a    = document.createElement('a')
+  a.href     = url
   a.download = `story-journal-backup-${todayISO()}.json`
   a.click()
   URL.revokeObjectURL(url)
@@ -85,11 +85,11 @@ function importBackup(file, onDone) {
     try {
       const data = JSON.parse(e.target.result)
       let added = 0
-      for (const key of ['receipts', 'homework', 'journal']) {
+      for (const key of ['pages', 'prompts', 'homework']) {
         if (!Array.isArray(data[key])) continue
         const existing = load(KEYS[key])
-        const ids = new Set(existing.map(e => e.id))
-        const merged = [...existing, ...data[key].filter(e => !ids.has(e.id))]
+        const ids      = new Set(existing.map(e => e.id))
+        const merged   = [...existing, ...data[key].filter(e => !ids.has(e.id))]
         merged.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         save(KEYS[key], merged)
         added += merged.length - existing.length
@@ -131,11 +131,11 @@ function CalendarView({ entries }) {
   const now = new Date()
   const [view, setView] = useState({ year: now.getFullYear(), month: now.getMonth() })
   const { year, month } = view
-  const dates = new Set(entries.map(e => e.createdAt.slice(0, 10)))
-  const today = todayISO()
-  const firstDow = new Date(year, month, 1).getDay()
+  const dates       = new Set(entries.map(e => e.createdAt.slice(0, 10)))
+  const today       = todayISO()
+  const firstDow    = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const monthLabel = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const monthLabel  = new Date(year, month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 
   function prev() {
     setView(({ year, month }) => month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 })
@@ -159,9 +159,9 @@ function CalendarView({ entries }) {
         ))}
         {cells.map((d, i) => {
           if (!d) return <div key={`g${i}`} />
-          const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+          const dateStr  = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
           const hasEntry = dates.has(dateStr)
-          const isToday = dateStr === today
+          const isToday  = dateStr === today
           return (
             <div key={d} className={`cal-day${isToday ? ' cal-today' : ''}${hasEntry ? ' cal-done' : ''}`}>
               <span className="cal-num">{d}</span>
@@ -177,12 +177,12 @@ function CalendarView({ entries }) {
 // ── Home ───────────────────────────────────────────────────────────────
 
 function HomeView({ nav }) {
-  const receiptCount = load(KEYS.receipts).length
-  const hwEntries    = load(KEYS.homework)
-  const journalCount = load(KEYS.journal).length
-  const streak       = getStreak(hwEntries)
-  const doneToday    = hwEntries.some(e => e.createdAt.slice(0, 10) === todayISO())
-  const tip          = randomFrom(tips)
+  const pagesCount = load(KEYS.pages).length
+  const hwEntries  = load(KEYS.homework)
+  const streak     = getStreak(hwEntries)
+  const doneToday  = hwEntries.some(e => e.createdAt.slice(0, 10) === todayISO())
+  const promptsCount = load(KEYS.prompts).length
+  const tip        = tips[Math.floor(Math.random() * tips.length)]
 
   return (
     <div className="home">
@@ -201,13 +201,22 @@ function HomeView({ nav }) {
 
       <div className="practice-cards">
 
-        <div className="practice-card" onClick={() => nav('receipt')}>
+        <div className="practice-card" onClick={() => nav('pages')}>
           <div className="card-top">
-            <span className="card-title">Story Receipt</span>
-            <span className="card-count">{receiptCount > 0 ? `${receiptCount} saved` : ''}</span>
+            <span className="card-title">Morning Pages</span>
+            <span className="card-count">{pagesCount > 0 ? `${pagesCount} sessions` : ''}</span>
           </div>
-          <p className="card-desc">Capture a moment from today in 100 words or less.</p>
-          <span className="card-cta">Start →</span>
+          <p className="card-desc">Stream-of-consciousness writing. No prompts, no rules — just keep writing.</p>
+          <span className="card-cta">Start writing →</span>
+        </div>
+
+        <div className="practice-card" onClick={() => nav('prompts')}>
+          <div className="card-top">
+            <span className="card-title">Writing Prompts</span>
+            <span className="card-count">{promptsCount > 0 ? `${promptsCount} saved` : ''}</span>
+          </div>
+          <p className="card-desc">Journal prompts to help you open up. Cycle through until one lands.</p>
+          <span className="card-cta">See a prompt →</span>
         </div>
 
         <div className="practice-card" onClick={() => nav('homework')}>
@@ -217,17 +226,8 @@ function HomeView({ nav }) {
               {doneToday ? '✓ Done today' : streak > 0 ? `✦ ${streak} day streak` : ''}
             </span>
           </div>
-          <p className="card-desc">What was the most story-worthy moment of your day?</p>
+          <p className="card-desc">Find the story hiding in your ordinary day. Every day has one.</p>
           <span className="card-cta">{doneToday ? 'View today →' : 'Start →'}</span>
-        </div>
-
-        <div className="practice-card" onClick={() => nav('timed')}>
-          <div className="card-top">
-            <span className="card-title">Timed Writing</span>
-            <span className="card-count">{journalCount > 0 ? `${journalCount} saved` : ''}</span>
-          </div>
-          <p className="card-desc">5, 10, or 15 minute sprint with a personal memory prompt.</p>
-          <span className="card-cta">Start →</span>
         </div>
 
       </div>
@@ -235,62 +235,227 @@ function HomeView({ nav }) {
   )
 }
 
-// ── Story Receipt ──────────────────────────────────────────────────────
+// ── Morning Pages ──────────────────────────────────────────────────────
 
-function ReceiptView({ onBack }) {
-  const [content, setContent]   = useState('')
-  const [receipts, setReceipts] = useState(() => load(KEYS.receipts))
-  const words    = wordCount(content)
-  const overLimit = words > 100
+function MorningPagesView({ onBack }) {
+  const [phase,      setPhase]      = useState('setup')
+  const [duration,   setDuration]   = useState(null)
+  const [content,    setContent]    = useState('')
+  const [finalWords, setFinalWords] = useState(0)
+  const [entries,    setEntries]    = useState(() => load(KEYS.pages))
+  const textareaRef = useRef(null)
+  const { timerLeft, timerDone, startTimer } = useTimer()
+
+  useEffect(() => {
+    if (timerDone && phase === 'writing') {
+      setFinalWords(wordCount(content))
+      setPhase('done')
+    }
+  }, [timerDone])
+
+  function handleStart(minutes) {
+    setDuration(minutes)
+    setPhase('writing')
+    startTimer(minutes)
+    setTimeout(() => textareaRef.current?.focus(), 50)
+  }
 
   function handleSave() {
-    if (!content.trim() || overLimit) return
-    const entry = { id: Date.now().toString(), content: content.trim(), wordCount: words, createdAt: new Date().toISOString() }
-    const updated = [entry, ...receipts]
-    save(KEYS.receipts, updated)
-    setReceipts(updated)
+    if (!content.trim()) { onBack(); return }
+    const now   = new Date().toISOString()
+    const entry = {
+      id: Date.now().toString(),
+      content: content.trim(),
+      wordCount: finalWords,
+      duration,
+      createdAt: now,
+    }
+    const updated = [entry, ...entries]
+    save(KEYS.pages, updated)
+    setEntries(updated)
+    setPhase('setup')
     setContent('')
+  }
+
+  const timerWarning = timerLeft !== null && timerLeft <= 60
+
+  // Setup
+  if (phase === 'setup') {
+    return (
+      <div className="section-view">
+        <div className="editor-topbar">
+          <button className="btn-ghost" onClick={onBack}>← back</button>
+        </div>
+        <div className="section-body">
+          <div className="section-intro">
+            <h2 className="section-title">Morning Pages</h2>
+          </div>
+
+          <div className="morning-pages-desc">
+            <p>Morning Pages is a practice of writing three pages of pure stream-of-consciousness, ideally first thing in the morning.</p>
+            <p>No editing. No rereading. No judgement. Write whatever is in your head — worries, to-do lists, random thoughts, feelings. Bad sentences, half-formed ideas, all of it.</p>
+            <p>The point isn't to write well. The point is to clear the mental clutter and see what's underneath.</p>
+          </div>
+
+          <div>
+            <p className="duration-label">How long do you have?</p>
+            <div className="duration-row">
+              {[5, 10, 20].map(m => (
+                <button key={m} className="duration-btn" onClick={() => handleStart(m)}>
+                  <span className="duration-num">{m}</span>
+                  <span className="duration-unit">min</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {entries.length > 0 && (
+            <div className="log-section">
+              <h3 className="log-heading">Past sessions</h3>
+              <div className="entry-log">
+                {entries.map(e => (
+                  <div key={e.id} className="entry-log-item">
+                    <div className="entry-log-meta">
+                      <span>{formatShortDate(e.createdAt)}</span>
+                      <span>{e.wordCount} words · {e.duration} min</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  // Done
+  if (phase === 'done') {
+    return (
+      <div className="section-view">
+        <div className="editor-topbar">
+          <button className="btn-ghost" onClick={onBack}>← back</button>
+        </div>
+        <div className="section-body">
+          <div className="result-header">
+            <span className="result-words">{finalWords}</span>
+            <span className="result-label">words in {duration} minutes</span>
+          </div>
+          <div className="result-content">
+            {content.split('\n').map((p, i) => p.trim() ? <p key={i}>{p}</p> : <br key={i} />)}
+          </div>
+          <div className="result-actions">
+            <button className="btn-primary" onClick={handleSave} disabled={!content.trim()}>Save session</button>
+            <button className="btn-secondary" onClick={onBack}>Discard</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Writing
+  return (
+    <div className="editor-view">
+      <div className="editor-topbar">
+        <button className="btn-ghost" onClick={onBack}>← back</button>
+        <div className="editor-meta">
+          <span className={`timer-display${timerWarning ? ' timer-warning' : ''}`}>
+            {timerLeft !== null ? formatTime(timerLeft) : ''}
+          </span>
+          {wordCount(content) > 0 && <span className="word-count">{wordCount(content)} words</span>}
+        </div>
+      </div>
+      <div className="editor-body">
+        <textarea
+          ref={textareaRef}
+          className="editor-textarea"
+          placeholder="Just keep writing. Don't stop, don't edit, don't look back…"
+          value={content}
+          onChange={e => setContent(e.target.value)}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ── Writing Prompts ────────────────────────────────────────────────────
+
+function WritingPromptsView({ onBack }) {
+  const [prompt,  setPrompt]  = useState(() => randomPrompt(null))
+  const [content, setContent] = useState('')
+  const [entries, setEntries] = useState(() => load(KEYS.prompts))
+  const [saved,   setSaved]   = useState(false)
+  const textareaRef = useRef(null)
+
+  function handleNewPrompt() {
+    setPrompt(p => randomPrompt(p))
+    setContent('')
+    setSaved(false)
+    setTimeout(() => textareaRef.current?.focus(), 50)
+  }
+
+  function handleSave() {
+    if (!content.trim()) return
+    const entry = {
+      id: Date.now().toString(),
+      prompt,
+      content: content.trim(),
+      createdAt: new Date().toISOString(),
+    }
+    const updated = [entry, ...entries]
+    save(KEYS.prompts, updated)
+    setEntries(updated)
+    setSaved(true)
   }
 
   return (
     <div className="section-view">
       <div className="editor-topbar">
         <button className="btn-ghost" onClick={onBack}>← back</button>
+        {saved && <span className="saved-badge">Saved ✓</span>}
       </div>
 
       <div className="section-body">
         <div className="section-intro">
-          <h2 className="section-title">Story Receipt</h2>
-          <p className="section-subtitle">What happened today, in a moment. 100 words max.</p>
+          <h2 className="section-title">Writing Prompts</h2>
+          <p className="section-subtitle">Keep cycling until one lands. Then write.</p>
         </div>
 
-        <div className="receipt-capture">
-          <p className="receipt-timestamp">{formatDate(new Date().toISOString())}</p>
+        <div className="prompt-display">
+          <p className="prompt-display-text">{prompt}</p>
+          <button className="btn-refresh-prompt" onClick={handleNewPrompt}>
+            ↻ different prompt
+          </button>
+        </div>
+
+        <div className="prompt-write-area">
           <textarea
-            className={`receipt-textarea${overLimit ? ' over-limit' : ''}`}
-            placeholder="Capture the moment…"
+            ref={textareaRef}
+            className="editor-textarea prompt-textarea"
+            placeholder="Write here…"
             value={content}
-            onChange={e => setContent(e.target.value)}
+            onChange={e => { setContent(e.target.value); setSaved(false) }}
             autoFocus
           />
-          <div className="receipt-footer">
-            <span className={`word-counter${overLimit ? ' over-limit' : ''}`}>
-              {words} / 100 words
-            </span>
-            <button className="btn-primary" onClick={handleSave} disabled={!content.trim() || overLimit}>
-              Save receipt
+          <div className="prompt-write-footer">
+            <span className="word-count">{wordCount(content) > 0 ? `${wordCount(content)} words` : ''}</span>
+            <button className="btn-primary" onClick={handleSave} disabled={!content.trim() || saved}>
+              {saved ? 'Saved ✓' : 'Save entry'}
             </button>
           </div>
         </div>
 
-        {receipts.length > 0 && (
+        {entries.length > 0 && (
           <div className="log-section">
-            <h3 className="log-heading">Past receipts</h3>
-            <div className="receipt-log">
-              {receipts.map(r => (
-                <div key={r.id} className="receipt-item">
-                  <span className="receipt-item-meta">{formatShortDate(r.createdAt)} · {r.wordCount} words</span>
-                  <p className="receipt-item-text">{r.content}</p>
+            <h3 className="log-heading">Past entries</h3>
+            <div className="entry-log">
+              {entries.map(e => (
+                <div key={e.id} className="entry-log-item">
+                  <div className="entry-log-meta">
+                    <span>{formatShortDate(e.createdAt)}</span>
+                    <span>{wordCount(e.content)} words</span>
+                  </div>
+                  <p className="entry-log-prompt">"{e.prompt}"</p>
                 </div>
               ))}
             </div>
@@ -304,20 +469,22 @@ function ReceiptView({ onBack }) {
 // ── Homework for Life ──────────────────────────────────────────────────
 
 function HomeworkView({ onBack }) {
-  const [allHw, setAllHw] = useState(() => load(KEYS.homework))
+  const [allHw,  setAllHw]  = useState(() => load(KEYS.homework))
   const todayEntry = allHw.find(e => e.createdAt.slice(0, 10) === todayISO())
 
-  const [moment, setMoment] = useState('')
-  const [why,    setWhy]    = useState('')
-  const [saved,  setSaved]  = useState(false)
+  const [moment,  setMoment]  = useState('')
+  const [tension, setTension] = useState('')
+  const [story,   setStory]   = useState('')
+  const [saved,   setSaved]   = useState(false)
   const streak = getStreak(allHw)
 
   function handleSave() {
     if (!moment.trim()) return
     const entry = {
       id: Date.now().toString(),
-      moment: moment.trim(),
-      why: why.trim(),
+      moment:  moment.trim(),
+      tension: tension.trim(),
+      story:   story.trim(),
       createdAt: new Date().toISOString(),
     }
     const updated = [entry, ...allHw.filter(e => e.createdAt.slice(0, 10) !== todayISO())]
@@ -327,7 +494,7 @@ function HomeworkView({ onBack }) {
   }
 
   const displayEntry = saved
-    ? { moment, why, createdAt: new Date().toISOString() }
+    ? { moment, tension, story, createdAt: new Date().toISOString() }
     : todayEntry
 
   return (
@@ -340,38 +507,65 @@ function HomeworkView({ onBack }) {
       <div className="section-body">
         <div className="section-intro">
           <h2 className="section-title">Homework for Life</h2>
-          <p className="section-subtitle">A daily practice of finding the stories in your own life.</p>
+          <p className="section-subtitle">Every ordinary day has a story in it. This is how you find it.</p>
         </div>
 
         {displayEntry ? (
           <div className="hw-entry-display">
-            <span className="section-label">✦ Today's entry</span>
-            <p className="hw-moment-text">{displayEntry.moment}</p>
-            {displayEntry.why && (
-              <p className="hw-why-text">"{displayEntry.why}"</p>
+            <div className="hw-display-block">
+              <span className="section-label">✦ The moment</span>
+              <p className="hw-display-text">{displayEntry.moment}</p>
+            </div>
+            {displayEntry.tension && (
+              <div className="hw-display-block">
+                <span className="section-label">✦ What made it interesting</span>
+                <p className="hw-display-text">{displayEntry.tension}</p>
+              </div>
+            )}
+            {displayEntry.story && (
+              <div className="hw-display-block">
+                <span className="section-label">✦ The story</span>
+                <p className="hw-display-text hw-story-text">{displayEntry.story}</p>
+              </div>
             )}
           </div>
         ) : (
           <div className="hw-form">
-            <div className="hw-question-block">
-              <label className="hw-question">What was the most story-worthy moment of your day?</label>
+
+            <div className="hw-step">
+              <label className="hw-question">What happened today?</label>
+              <p className="hw-hint">Pick any moment — it doesn't have to be dramatic. A conversation, something you noticed, a feeling that came out of nowhere.</p>
               <textarea
                 className="hw-textarea"
-                placeholder="One sentence minimum…"
+                placeholder="Describe the moment…"
                 value={moment}
                 onChange={e => setMoment(e.target.value)}
                 autoFocus
               />
             </div>
 
-            {moment.trim().length > 0 && (
-              <div className="hw-question-block">
-                <label className="hw-question">Why does this moment matter?</label>
+            {moment.trim().length > 20 && (
+              <div className="hw-step">
+                <label className="hw-question">What made it interesting?</label>
+                <p className="hw-hint">Was there a feeling, a tension, something unexpected? What was at stake, even a little?</p>
                 <textarea
                   className="hw-textarea"
-                  placeholder="What made it stick with you?"
-                  value={why}
-                  onChange={e => setWhy(e.target.value)}
+                  placeholder="What was underneath it…"
+                  value={tension}
+                  onChange={e => setTension(e.target.value)}
+                />
+              </div>
+            )}
+
+            {tension.trim().length > 10 && (
+              <div className="hw-step">
+                <label className="hw-question">Now tell it as a story.</label>
+                <p className="hw-hint">Set the scene. Put the reader there with you. Write it like you'd tell it to a friend — with a beginning, a middle, and what it meant.</p>
+                <textarea
+                  className="hw-textarea hw-textarea-tall"
+                  placeholder="Start with where you were…"
+                  value={story}
+                  onChange={e => setStory(e.target.value)}
                 />
               </div>
             )}
@@ -379,6 +573,7 @@ function HomeworkView({ onBack }) {
             <button className="btn-primary" onClick={handleSave} disabled={!moment.trim()}>
               Save today's entry
             </button>
+
           </div>
         )}
 
@@ -388,150 +583,7 @@ function HomeworkView({ onBack }) {
   )
 }
 
-// ── Timed Writing ──────────────────────────────────────────────────────
-
-function TimedWritingView({ onBack }) {
-  const [phase,      setPhase]      = useState('setup') // setup | writing | done
-  const [duration,   setDuration]   = useState(null)
-  const [prompt,     setPrompt]     = useState(null)
-  const [content,    setContent]    = useState('')
-  const [finalWords, setFinalWords] = useState(0)
-  const [entries,    setEntries]    = useState(() => load(KEYS.journal))
-  const textareaRef = useRef(null)
-  const { timerLeft, timerDone, startTimer } = useTimer()
-
-  useEffect(() => {
-    if (timerDone && phase === 'writing') {
-      setFinalWords(wordCount(content))
-      setPhase('done')
-    }
-  }, [timerDone])
-
-  function handleStart(minutes) {
-    setDuration(minutes)
-    setPrompt(randomFrom(memoryPrompts))
-    setPhase('writing')
-    startTimer(minutes)
-    setTimeout(() => textareaRef.current?.focus(), 50)
-  }
-
-  function handleSave() {
-    if (!content.trim()) { onBack(); return }
-    const now = new Date().toISOString()
-    const entry = {
-      id: Date.now().toString(),
-      title: formatDate(now),
-      content: content.trim(),
-      prompt,
-      createdAt: now,
-      updatedAt: now,
-    }
-    const updated = [entry, ...entries]
-    save(KEYS.journal, updated)
-    setEntries(updated)
-    setPhase('setup')
-    setContent('')
-  }
-
-  const timerWarning = timerLeft !== null && timerLeft <= 60
-
-  // ── Setup
-  if (phase === 'setup') {
-    return (
-      <div className="section-view">
-        <div className="editor-topbar">
-          <button className="btn-ghost" onClick={onBack}>← back</button>
-        </div>
-        <div className="section-body">
-          <div className="section-intro">
-            <h2 className="section-title">Timed Writing</h2>
-            <p className="section-subtitle">Choose a duration. You'll get a prompt and the clock starts.</p>
-          </div>
-
-          <div className="duration-row">
-            {[5, 10, 15].map(m => (
-              <button key={m} className="duration-btn" onClick={() => handleStart(m)}>
-                <span className="duration-num">{m}</span>
-                <span className="duration-unit">min</span>
-              </button>
-            ))}
-          </div>
-
-          {entries.length > 0 && (
-            <div className="log-section">
-              <h3 className="log-heading">Past entries</h3>
-              <div className="entry-log">
-                {entries.map(e => (
-                  <div key={e.id} className="entry-log-item">
-                    <span className="entry-log-date">{formatShortDate(e.createdAt)}</span>
-                    <span className="entry-log-words">{wordCount(e.content)} words</span>
-                    {e.prompt && <p className="entry-log-prompt">"{e.prompt}"</p>}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-  // ── Done
-  if (phase === 'done') {
-    return (
-      <div className="section-view">
-        <div className="editor-topbar">
-          <button className="btn-ghost" onClick={onBack}>← back</button>
-        </div>
-        <div className="section-body">
-          <div className="result-header">
-            <span className="result-words">{finalWords}</span>
-            <span className="result-label">words in {duration} {duration === 1 ? 'minute' : 'minutes'}</span>
-          </div>
-          <div className="result-content">
-            {content.split('\n').map((p, i) => p.trim() ? <p key={i}>{p}</p> : <br key={i} />)}
-          </div>
-          <div className="result-actions">
-            <button className="btn-primary" onClick={handleSave} disabled={!content.trim()}>Save entry</button>
-            <button className="btn-secondary" onClick={onBack}>Discard</button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ── Writing
-  return (
-    <div className="editor-view">
-      <div className="editor-topbar">
-        <button className="btn-ghost" onClick={onBack}>← back</button>
-        <div className="editor-meta">
-          <span className={`timer-display${timerWarning ? ' timer-warning' : ''}`}>
-            {timerLeft !== null ? formatTime(timerLeft) : ''}
-          </span>
-          {wordCount(content) > 0 && <span className="word-count">{wordCount(content)} words</span>}
-        </div>
-      </div>
-
-      <div className="timed-prompt-bar">
-        <span className="section-label">✦ Prompt</span>
-        <p>{prompt}</p>
-      </div>
-
-      <div className="editor-body">
-        <textarea
-          ref={textareaRef}
-          className="editor-textarea"
-          placeholder="Start writing…"
-          value={content}
-          onChange={e => setContent(e.target.value)}
-        />
-      </div>
-    </div>
-  )
-}
-
-// ── Backup screen ──────────────────────────────────────────────────────
+// ── Backup ─────────────────────────────────────────────────────────────
 
 function BackupView({ onBack }) {
   const importRef = useRef(null)
@@ -541,7 +593,9 @@ function BackupView({ onBack }) {
     const file = e.target.files[0]
     if (!file) return
     importBackup(file, added => {
-      setMsg(added > 0 ? `Imported ${added} new ${added === 1 ? 'entry' : 'entries'}.` : 'No new entries — everything was already here.')
+      setMsg(added > 0
+        ? `Imported ${added} new ${added === 1 ? 'entry' : 'entries'}.`
+        : 'No new entries — everything was already here.')
     })
     e.target.value = ''
   }
@@ -554,7 +608,7 @@ function BackupView({ onBack }) {
       <div className="section-body">
         <div className="section-intro">
           <h2 className="section-title">Backup</h2>
-          <p className="section-subtitle">Export all your entries to a file you can save anywhere. Import to restore.</p>
+          <p className="section-subtitle">Export all your entries to a file. Import to restore them.</p>
         </div>
         <div className="backup-actions">
           <button className="btn-primary" onClick={exportBackup}>↓ Export backup</button>
@@ -574,11 +628,11 @@ export default function App() {
 
   return (
     <>
-      {view === 'home'     && <HomeView          nav={setView} />}
-      {view === 'receipt'  && <ReceiptView        onBack={() => setView('home')} />}
-      {view === 'homework' && <HomeworkView        onBack={() => setView('home')} />}
-      {view === 'timed'    && <TimedWritingView    onBack={() => setView('home')} />}
-      {view === 'backup'   && <BackupView          onBack={() => setView('home')} />}
+      {view === 'home'     && <HomeView             nav={setView} />}
+      {view === 'pages'    && <MorningPagesView      onBack={() => setView('home')} />}
+      {view === 'prompts'  && <WritingPromptsView    onBack={() => setView('home')} />}
+      {view === 'homework' && <HomeworkView          onBack={() => setView('home')} />}
+      {view === 'backup'   && <BackupView            onBack={() => setView('home')} />}
     </>
   )
 }
