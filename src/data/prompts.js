@@ -1,3 +1,4 @@
+// Used on home screen and in old journal entries
 export const prompts = [
   "A stranger knocks on your door at 3am with a map and no explanation.",
   "Write about the last conversation you had with someone you'll never see again.",
@@ -19,21 +20,6 @@ export const prompts = [
   "Two siblings go through a parent's belongings after a death.",
   "Write a scene entirely through what a character notices but doesn't mention out loud.",
   "Someone is given exactly one hour to say goodbye.",
-  "Your character witnesses something they weren't supposed to see.",
-  "A friendship ends not with a fight, but with silence.",
-  "Write about the moment right before a big decision is made.",
-  "An ordinary Tuesday turns out to be the most important day of someone's life.",
-  "Write a scene where the weather perfectly mirrors what a character is feeling — but don't name the feeling.",
-  "A character lies to someone they love, convincingly. Write it from inside their head.",
-  "Two strangers share a meal and reveal more than they intended.",
-  "Write about something that was lost and then found, but too late.",
-  "A character rehearses a conversation in their head. Then has it. Write both.",
-  "Describe the moment someone realizes they've been wrong about another person for years.",
-  "Write a scene that begins at the end.",
-  "Your character is the only one who remembers things the way they actually happened.",
-  "Write about an apology that comes too late — or just in time.",
-  "A birthday party for someone who didn't want one.",
-  "Write a scene from the point of view of the least important person in the room.",
 ]
 
 export const tips = [
@@ -57,4 +43,38 @@ export const tips = [
   "The first draft is for you. Write it badly. Get the shape of it on the page.",
   "Zoom in on one moment and slow it down. The reader will feel it more than a summary ever could.",
   "When you're stuck, ask: what's the worst thing that could happen to this character right now?",
+]
+
+// Used in Timed Writing — personal memory and emotion, not fiction
+export const memoryPrompts = [
+  "Write about a moment you felt completely out of place.",
+  "Describe the last time a stranger was unexpectedly kind to you.",
+  "Write about a small habit or ritual that centers you. Where did it come from?",
+  "What's a moment you wish you could go back and do differently?",
+  "Describe a conversation that changed how you see something.",
+  "Write about a time you were scared and did it anyway.",
+  "What's a moment from childhood that still makes you smile?",
+  "Write about something you lost that you still think about.",
+  "Describe the last time you laughed until it hurt.",
+  "Write about a place that feels like home to you — and why.",
+  "Describe a moment when someone knew you better than you knew yourself.",
+  "Write about a time you had to say something hard.",
+  "Write about a moment of unexpected beauty — something you almost missed.",
+  "Describe a time you felt genuinely proud of yourself.",
+  "Write about a disagreement that taught you something.",
+  "Write about someone who influenced you without ever knowing it.",
+  "Describe the last time you felt truly present — not thinking about past or future.",
+  "Write about a time you had to ask for help.",
+  "What's a belief you held for years that you've since let go of?",
+  "Write about a moment that felt insignificant at the time but mattered later.",
+  "Describe the first time you felt responsible for someone else.",
+  "Write about a time a stranger made a real impression on you.",
+  "Describe a moment when time seemed to slow down.",
+  "Write about a goodbye that stayed with you.",
+  "Write about a time you were completely wrong about someone.",
+  "Describe the moment you knew something had changed — in you, in a relationship, in your life.",
+  "Write about the best advice you ever received. Did you take it?",
+  "Describe a moment of failure that taught you more than success ever did.",
+  "Write about a time you felt like you truly belonged somewhere.",
+  "What's the most honest thing anyone has ever said to you?",
 ]
