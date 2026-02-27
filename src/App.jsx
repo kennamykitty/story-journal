@@ -188,7 +188,7 @@ function HomeView({ nav }) {
     <div className="home">
       <header className="home-header">
         <div>
-          <h1 className="app-title">Story Journal</h1>
+          <h1 className="app-title">Storytelling</h1>
           <p className="app-subtitle">A daily storytelling practice</p>
         </div>
         <button className="btn-ghost small" onClick={() => nav('backup')}>Backup</button>
@@ -435,7 +435,7 @@ function WritingPromptsView({ onBack }) {
             placeholder="Write here…"
             value={content}
             onChange={e => { setContent(e.target.value); setSaved(false) }}
-            autoFocus
+
           />
           <div className="prompt-write-footer">
             <span className="word-count">{wordCount(content) > 0 ? `${wordCount(content)} words` : ''}</span>
@@ -540,7 +540,7 @@ function HomeworkView({ onBack }) {
                 placeholder="Describe the moment…"
                 value={moment}
                 onChange={e => setMoment(e.target.value)}
-                autoFocus
+    
               />
             </div>
 
