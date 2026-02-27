@@ -34,4 +34,27 @@ export const prompts = [
   "Write about an apology that comes too late — or just in time.",
   "A birthday party for someone who didn't want one.",
   "Write a scene from the point of view of the least important person in the room.",
-];
+]
+
+export const tips = [
+  "Start in the middle of the action. Your reader doesn't need the backstory — they need to be inside the scene.",
+  "Pick one specific sensory detail. Not 'the room smelled old' — 'the room smelled of cedar and something burnt.'",
+  "What does your character want right now, in this exact moment? Let that drive every sentence.",
+  "Show emotion through the body — a clenched jaw, a held breath, hands that won't stay still. Skip the word for it.",
+  "Conflict doesn't have to be dramatic. Two people wanting different things in the same room is enough.",
+  "Let your character make a choice, even a small one. Choice is what reveals who someone really is.",
+  "Write the scene as if you're watching it happen. What do you see first? Start there.",
+  "Cut your first sentence. Your real opening is almost always the second one.",
+  "Good dialogue does two things at once — moves the scene forward and reveals something about the person speaking.",
+  "End the scene one beat before the obvious moment. Stop early and let the reader lean in.",
+  "The way a character describes a room tells us more about them than about the room.",
+  "Don't explain the emotion. Trust your reader. Write what happens, and let them feel it.",
+  "The most interesting moment is usually the one right before the obvious one.",
+  "Specific nouns beat adjectives every time. Not 'a nice car' — 'a dented Volvo with a cracked bumper sticker.'",
+  "Silence in dialogue matters as much as the words. What a character doesn't say is part of the story.",
+  "Every scene needs a small change — something is different at the end than it was at the beginning.",
+  "Put your character in a situation where two things they care about are in conflict.",
+  "The first draft is for you. Write it badly. Get the shape of it on the page.",
+  "Zoom in on one moment and slow it down. The reader will feel it more than a summary ever could.",
+  "When you're stuck, ask: what's the worst thing that could happen to this character right now?",
+]

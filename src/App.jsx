@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { prompts } from './data/prompts'
+import { prompts, tips } from './data/prompts'
 import './App.css'
 
 const STORAGE_KEY = 'story-journal-entries'
@@ -16,8 +16,8 @@ function saveEntries(entries) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries))
 }
 
-function randomPrompt(exclude) {
-  const pool = exclude ? prompts.filter(p => p !== exclude) : prompts
+function randomFrom(arr, exclude) {
+  const pool = exclude ? arr.filter(p => p !== exclude) : arr
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
@@ -37,11 +37,16 @@ function wordCount(text) {
   return text.trim() === '' ? 0 : text.trim().split(/\s+/).length
 }
 
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60)
+  const s = seconds % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
 function exportBackup() {
   const entries = getEntries()
   const date = new Date().toISOString().slice(0, 10)
-  const json = JSON.stringify(entries, null, 2)
-  const blob = new Blob([json], { type: 'application/json' })
+  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -55,7 +60,7 @@ function importBackup(file, onDone) {
   reader.onload = e => {
     try {
       const imported = JSON.parse(e.target.result)
-      if (!Array.isArray(imported)) throw new Error('Invalid format')
+      if (!Array.isArray(imported)) throw new Error()
       const existing = getEntries()
       const existingIds = new Set(existing.map(e => e.id))
       const merged = [...existing, ...imported.filter(e => !existingIds.has(e.id))]
@@ -63,22 +68,60 @@ function importBackup(file, onDone) {
       saveEntries(merged)
       onDone(merged.length - existing.length)
     } catch {
-      alert('Could not read that file. Make sure it\'s a Story Journal backup.')
+      alert("Could not read that file. Make sure it's a Story Journal backup.")
     }
   }
   reader.readAsText(file)
 }
 
+// ── Timer hook ─────────────────────────────────────────────────────────
+
+function useTimer() {
+  const [timerLeft, setTimerLeft] = useState(null)
+  const [timerDone, setTimerDone] = useState(false)
+  const intervalRef = useRef(null)
+
+  function startTimer(minutes) {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    setTimerDone(false)
+    setTimerLeft(minutes * 60)
+    intervalRef.current = setInterval(() => {
+      setTimerLeft(t => {
+        if (t <= 1) {
+          clearInterval(intervalRef.current)
+          setTimerDone(true)
+          return 0
+        }
+        return t - 1
+      })
+    }, 1000)
+  }
+
+  function cancelTimer() {
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    setTimerLeft(null)
+    setTimerDone(false)
+  }
+
+  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current) }, [])
+
+  return { timerLeft, timerDone, startTimer, cancelTimer }
+}
+
 // ── Views ──────────────────────────────────────────────────────────────
 
 function HomeView({ onNewEntry, onBrowse }) {
-  const [prompt, setPrompt] = useState(() => randomPrompt())
+  const [prompt, setPrompt] = useState(() => randomFrom(prompts))
+  const [tip, setTip] = useState(() => randomFrom(tips))
   const entries = getEntries()
 
   return (
     <div className="home">
       <header className="home-header">
-        <h1 className="app-title">Story Journal</h1>
+        <div>
+          <h1 className="app-title">Story Journal</h1>
+          <p className="app-subtitle">A place to practice telling your story</p>
+        </div>
         {entries.length > 0 && (
           <button className="btn-ghost" onClick={onBrowse}>
             {entries.length} {entries.length === 1 ? 'entry' : 'entries'} →
@@ -87,11 +130,23 @@ function HomeView({ onNewEntry, onBrowse }) {
       </header>
 
       <div className="prompt-card">
-        <span className="prompt-label">Today's prompt</span>
-        <p className="prompt-text">{prompt}</p>
-        <button className="btn-ghost prompt-refresh" onClick={() => setPrompt(p => randomPrompt(p))}>
-          ↻ different prompt
-        </button>
+        <div className="prompt-section">
+          <span className="section-label">✦ Today's prompt</span>
+          <p className="prompt-text">{prompt}</p>
+          <button className="btn-refresh" onClick={() => setPrompt(p => randomFrom(prompts, p))}>
+            ↻ different prompt
+          </button>
+        </div>
+
+        <div className="tip-divider" />
+
+        <div className="tip-section">
+          <span className="section-label">✦ Craft tip</span>
+          <p className="tip-text">{tip}</p>
+          <button className="btn-refresh" onClick={() => setTip(t => randomFrom(tips, t))}>
+            ↻ different tip
+          </button>
+        </div>
       </div>
 
       <div className="home-actions">
@@ -106,16 +161,18 @@ function HomeView({ onNewEntry, onBrowse }) {
   )
 }
 
+const TIMER_OPTIONS = [5, 10, 15, 20]
+
 function EditorView({ prompt, onSave, onBack }) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [saved, setSaved] = useState(false)
   const [showPrompt, setShowPrompt] = useState(!!prompt)
+  const [showTimerPicker, setShowTimerPicker] = useState(false)
   const textareaRef = useRef(null)
+  const { timerLeft, timerDone, startTimer, cancelTimer } = useTimer()
 
-  useEffect(() => {
-    textareaRef.current?.focus()
-  }, [])
+  useEffect(() => { textareaRef.current?.focus() }, [])
 
   function handleSave() {
     if (!content.trim()) return
@@ -131,17 +188,57 @@ function EditorView({ prompt, onSave, onBack }) {
     }
     saveEntries([entry, ...entries])
     setSaved(true)
+    cancelTimer()
     setTimeout(() => onSave(), 600)
   }
 
   const words = wordCount(content)
+  const timerWarning = timerLeft !== null && timerLeft <= 60 && !timerDone
 
   return (
     <div className="editor-view">
       <div className="editor-topbar">
         <button className="btn-ghost" onClick={onBack}>← back</button>
+
         <div className="editor-meta">
+          {/* Timer display */}
+          {timerLeft !== null && (
+            <span
+              className={`timer-display${timerDone ? ' timer-done' : timerWarning ? ' timer-warning' : ''}`}
+              onClick={cancelTimer}
+              title="Click to cancel timer"
+            >
+              {timerDone ? 'Time\'s up ✓' : formatTime(timerLeft)}
+            </span>
+          )}
+
+          {/* Timer picker */}
+          {timerLeft === null && (
+            <div className="timer-picker-wrap">
+              <button
+                className="btn-ghost"
+                onClick={() => setShowTimerPicker(p => !p)}
+              >
+                ⏱ Timer
+              </button>
+              {showTimerPicker && (
+                <div className="timer-picker">
+                  {TIMER_OPTIONS.map(m => (
+                    <button
+                      key={m}
+                      className="timer-option"
+                      onClick={() => { startTimer(m); setShowTimerPicker(false) }}
+                    >
+                      {m} min
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {words > 0 && <span className="word-count">{words} words</span>}
+
           <button
             className={`btn-primary${saved ? ' btn-saved' : ''}`}
             onClick={handleSave}
@@ -154,9 +251,9 @@ function EditorView({ prompt, onSave, onBack }) {
 
       {prompt && showPrompt && (
         <div className="editor-prompt">
-          <span className="prompt-label">Prompt</span>
+          <span className="section-label">✦ Prompt</span>
           <p>{prompt}</p>
-          <button className="btn-ghost" onClick={() => setShowPrompt(false)}>hide</button>
+          <button className="btn-refresh" onClick={() => setShowPrompt(false)}>hide</button>
         </div>
       )}
 
@@ -182,8 +279,7 @@ function EditorView({ prompt, onSave, onBack }) {
 function EntryView({ entry, onBack, onDelete }) {
   function handleDelete() {
     if (window.confirm('Delete this entry? This cannot be undone.')) {
-      const entries = getEntries().filter(e => e.id !== entry.id)
-      saveEntries(entries)
+      saveEntries(getEntries().filter(e => e.id !== entry.id))
       onDelete()
     }
   }
@@ -194,13 +290,12 @@ function EntryView({ entry, onBack, onDelete }) {
         <button className="btn-ghost" onClick={onBack}>← back</button>
         <button className="btn-danger" onClick={handleDelete}>Delete</button>
       </div>
-
       <div className="read-body">
         <p className="read-date">{formatDate(entry.createdAt)}</p>
         <h2 className="read-title">{entry.title}</h2>
         {entry.prompt && (
           <div className="read-prompt">
-            <span className="prompt-label">Prompt</span>
+            <span className="section-label">✦ Prompt</span>
             <p>{entry.prompt}</p>
           </div>
         )}
@@ -224,7 +319,9 @@ function BrowseView({ onSelect, onBack, onNewEntry }) {
     if (!file) return
     importBackup(file, added => {
       setEntries(getEntries())
-      alert(added > 0 ? `Imported ${added} new ${added === 1 ? 'entry' : 'entries'}.` : 'No new entries found — everything was already here.')
+      alert(added > 0
+        ? `Imported ${added} new ${added === 1 ? 'entry' : 'entries'}.`
+        : 'No new entries found — everything was already here.')
     })
     e.target.value = ''
   }
@@ -233,11 +330,10 @@ function BrowseView({ onSelect, onBack, onNewEntry }) {
     <div className="browse-view">
       <div className="editor-topbar">
         <button className="btn-ghost" onClick={onBack}>← back</button>
-        <button className="btn-primary" onClick={() => onNewEntry(randomPrompt())}>
+        <button className="btn-primary" onClick={() => onNewEntry(randomFrom(prompts))}>
           New entry
         </button>
       </div>
-
       <div className="browse-body">
         <div className="browse-heading-row">
           <h2 className="browse-heading">All entries</h2>
@@ -284,40 +380,18 @@ export default function App() {
     setView('editor')
   }
 
-  if (view === 'editor') {
-    return (
-      <EditorView
-        prompt={activePrompt}
-        onSave={() => setView('browse')}
-        onBack={() => setView('home')}
-      />
-    )
-  }
-
-  if (view === 'browse') {
-    return (
-      <BrowseView
-        onSelect={entry => { setActiveEntry(entry); setView('entry') }}
-        onBack={() => setView('home')}
-        onNewEntry={startNewEntry}
-      />
-    )
-  }
-
-  if (view === 'entry') {
-    return (
-      <EntryView
-        entry={activeEntry}
-        onBack={() => setView('browse')}
-        onDelete={() => setView('browse')}
-      />
-    )
-  }
-
-  return (
-    <HomeView
+  if (view === 'editor') return (
+    <EditorView prompt={activePrompt} onSave={() => setView('browse')} onBack={() => setView('home')} />
+  )
+  if (view === 'browse') return (
+    <BrowseView
+      onSelect={entry => { setActiveEntry(entry); setView('entry') }}
+      onBack={() => setView('home')}
       onNewEntry={startNewEntry}
-      onBrowse={() => setView('browse')}
     />
   )
+  if (view === 'entry') return (
+    <EntryView entry={activeEntry} onBack={() => setView('browse')} onDelete={() => setView('browse')} />
+  )
+  return <HomeView onNewEntry={startNewEntry} onBrowse={() => setView('browse')} />
 }
