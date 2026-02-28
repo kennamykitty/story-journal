@@ -102,6 +102,57 @@ function importBackup(file, onDone) {
   reader.readAsText(file)
 }
 
+// ── Install prompt hook ────────────────────────────────────────────────
+
+function useInstallPrompt() {
+  const [prompt, setPrompt] = useState(null)
+  useEffect(() => {
+    function handler(e) { e.preventDefault(); setPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+  async function trigger() {
+    if (!prompt) return false
+    prompt.prompt()
+    const { outcome } = await prompt.userChoice
+    setPrompt(null)
+    return outcome === 'accepted'
+  }
+  return { canInstall: !!prompt, trigger }
+}
+
+function InstallBanner({ onDismiss }) {
+  const { canInstall, trigger } = useInstallPrompt()
+  const ua             = navigator.userAgent
+  const isIOS          = /iPad|iPhone|iPod/.test(ua) && !window.MSStream
+  const isSafariDesk   = /Safari/.test(ua) && !/Chrome|CriOS|FxiOS/.test(ua) && !isIOS
+  const showManual     = !canInstall && (isIOS || isSafariDesk)
+
+  if (!canInstall && !showManual) return null
+
+  async function handleInstall() {
+    const accepted = await trigger()
+    if (accepted) onDismiss()
+  }
+
+  return (
+    <div className="install-banner">
+      <p className="install-banner-text">
+        {isIOS
+          ? <>Tap the <strong>Share</strong> button, then <strong>Add to Home Screen</strong> — and Storytelling works like a real app, even offline.</>
+          : isSafariDesk
+          ? <>In Safari go to <strong>File → Add to Dock</strong> — and Storytelling works like a real app, even offline.</>
+          : <>Install Storytelling on this device and it opens like a real app — no browser needed, works offline.</>
+        }
+      </p>
+      <div className="install-banner-actions">
+        {canInstall && <button className="btn-primary" onClick={handleInstall}>Install app</button>}
+        <button className="install-dismiss" onClick={onDismiss}>Not now</button>
+      </div>
+    </div>
+  )
+}
+
 // ── Timer hook ─────────────────────────────────────────────────────────
 
 function useTimer() {
@@ -190,8 +241,18 @@ function HomeView({ nav }) {
   const totalEntries = pagesCount + promptsCount + hwEntries.length
   const tip          = tips[Math.floor(Math.random() * tips.length)]
 
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || !!window.navigator.standalone
+  const [showInstall, setShowInstall] = useState(
+    !isStandalone && !localStorage.getItem('sj-install-dismissed')
+  )
+  function dismissInstall() {
+    localStorage.setItem('sj-install-dismissed', '1')
+    setShowInstall(false)
+  }
+
   return (
     <div className="home">
+      {showInstall && <InstallBanner onDismiss={dismissInstall} />}
       <header className="home-header">
         <div>
           <h1 className="app-title">Storytelling</h1>

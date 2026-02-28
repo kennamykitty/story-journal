@@ -493,6 +493,45 @@ button {
 .backup-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .backup-msg { font-size: 14px; color: var(--success); }
 
+/* ── Install banner ─────────────────────────────────────────── */
+.install-banner {
+  background: var(--accent);
+  color: #f5f0e8;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.install-banner-text {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.65;
+}
+.install-banner-text strong { font-weight: 700; }
+.install-banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.install-banner-actions .btn-primary {
+  background: #f5f0e8;
+  color: var(--accent);
+}
+.install-banner-actions .btn-primary:hover { background: #ede7db; }
+.install-dismiss {
+  font-size: 14px;
+  color: rgba(245,240,232,0.7);
+  padding: 10px 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s;
+}
+.install-dismiss:hover { color: #f5f0e8; }
+
 /* ── Home history link ──────────────────────────────────────── */
 .home-history-link {
   display: flex;
