@@ -127,7 +127,7 @@ function useTimer() {
 
 // ── Calendar ───────────────────────────────────────────────────────────
 
-function CalendarView({ entries }) {
+function CalendarView({ entries, onDayClick }) {
   const now = new Date()
   const [view, setView] = useState({ year: now.getFullYear(), month: now.getMonth() })
   const { year, month } = view
@@ -162,8 +162,13 @@ function CalendarView({ entries }) {
           const dateStr  = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
           const hasEntry = dates.has(dateStr)
           const isToday  = dateStr === today
+          const clickable = hasEntry && onDayClick
           return (
-            <div key={d} className={`cal-day${isToday ? ' cal-today' : ''}${hasEntry ? ' cal-done' : ''}`}>
+            <div
+              key={d}
+              className={`cal-day${isToday ? ' cal-today' : ''}${hasEntry ? ' cal-done' : ''}${clickable ? ' cal-clickable' : ''}`}
+              onClick={clickable ? () => onDayClick(dateStr) : undefined}
+            >
               <span className="cal-num">{d}</span>
               {hasEntry && <span className="cal-dot" />}
             </div>
@@ -238,11 +243,12 @@ function HomeView({ nav }) {
 // ── Morning Pages ──────────────────────────────────────────────────────
 
 function MorningPagesView({ onBack }) {
-  const [phase,      setPhase]      = useState('setup')
-  const [duration,   setDuration]   = useState(null)
-  const [content,    setContent]    = useState('')
-  const [finalWords, setFinalWords] = useState(0)
-  const [entries,    setEntries]    = useState(() => load(KEYS.pages))
+  const [phase,        setPhase]        = useState('setup')
+  const [duration,     setDuration]     = useState(null)
+  const [content,      setContent]      = useState('')
+  const [finalWords,   setFinalWords]   = useState(0)
+  const [entries,      setEntries]      = useState(() => load(KEYS.pages))
+  const [viewingEntry, setViewingEntry] = useState(null)
   const textareaRef = useRef(null)
   const { timerLeft, timerDone, startTimer } = useTimer()
 
@@ -279,6 +285,24 @@ function MorningPagesView({ onBack }) {
 
   const timerWarning = timerLeft !== null && timerLeft <= 60
 
+  // Reading a past entry
+  if (viewingEntry) {
+    return (
+      <div className="section-view">
+        <div className="editor-topbar">
+          <button className="btn-ghost" onClick={() => setViewingEntry(null)}>← back</button>
+          <span className="entry-read-date">{formatDate(viewingEntry.createdAt)}</span>
+        </div>
+        <div className="section-body">
+          <div className="entry-read-meta">{viewingEntry.wordCount} words · {viewingEntry.duration} min</div>
+          <div className="entry-read-content">
+            {viewingEntry.content.split('\n').map((p, i) => p.trim() ? <p key={i}>{p}</p> : <br key={i} />)}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Setup
   if (phase === 'setup') {
     return (
@@ -314,11 +338,12 @@ function MorningPagesView({ onBack }) {
               <h3 className="log-heading">Past sessions</h3>
               <div className="entry-log">
                 {entries.map(e => (
-                  <div key={e.id} className="entry-log-item">
+                  <div key={e.id} className="entry-log-item entry-log-clickable" onClick={() => setViewingEntry(e)}>
                     <div className="entry-log-meta">
                       <span>{formatShortDate(e.createdAt)}</span>
                       <span>{e.wordCount} words · {e.duration} min</span>
                     </div>
+                    <span className="entry-log-tap">Tap to read →</span>
                   </div>
                 ))}
               </div>
@@ -381,10 +406,11 @@ function MorningPagesView({ onBack }) {
 // ── Writing Prompts ────────────────────────────────────────────────────
 
 function WritingPromptsView({ onBack }) {
-  const [prompt,  setPrompt]  = useState(() => randomPrompt(null))
-  const [content, setContent] = useState('')
-  const [entries, setEntries] = useState(() => load(KEYS.prompts))
-  const [saved,   setSaved]   = useState(false)
+  const [prompt,       setPrompt]       = useState(() => randomPrompt(null))
+  const [content,      setContent]      = useState('')
+  const [entries,      setEntries]      = useState(() => load(KEYS.prompts))
+  const [saved,        setSaved]        = useState(false)
+  const [viewingEntry, setViewingEntry] = useState(null)
   const textareaRef = useRef(null)
 
   function handleNewPrompt() {
@@ -406,6 +432,24 @@ function WritingPromptsView({ onBack }) {
     save(KEYS.prompts, updated)
     setEntries(updated)
     setSaved(true)
+  }
+
+  if (viewingEntry) {
+    return (
+      <div className="section-view">
+        <div className="editor-topbar">
+          <button className="btn-ghost" onClick={() => setViewingEntry(null)}>← back</button>
+          <span className="entry-read-date">{formatDate(viewingEntry.createdAt)}</span>
+        </div>
+        <div className="section-body">
+          <p className="entry-read-prompt">"{viewingEntry.prompt}"</p>
+          <div className="entry-read-content">
+            {viewingEntry.content.split('\n').map((p, i) => p.trim() ? <p key={i}>{p}</p> : <br key={i} />)}
+          </div>
+          <p className="entry-read-meta">{wordCount(viewingEntry.content)} words</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -450,12 +494,13 @@ function WritingPromptsView({ onBack }) {
             <h3 className="log-heading">Past entries</h3>
             <div className="entry-log">
               {entries.map(e => (
-                <div key={e.id} className="entry-log-item">
+                <div key={e.id} className="entry-log-item entry-log-clickable" onClick={() => setViewingEntry(e)}>
                   <div className="entry-log-meta">
                     <span>{formatShortDate(e.createdAt)}</span>
                     <span>{wordCount(e.content)} words</span>
                   </div>
                   <p className="entry-log-prompt">"{e.prompt}"</p>
+                  <span className="entry-log-tap">Tap to read →</span>
                 </div>
               ))}
             </div>
@@ -469,7 +514,8 @@ function WritingPromptsView({ onBack }) {
 // ── Homework for Life ──────────────────────────────────────────────────
 
 function HomeworkView({ onBack }) {
-  const [allHw,  setAllHw]  = useState(() => load(KEYS.homework))
+  const [allHw,        setAllHw]        = useState(() => load(KEYS.homework))
+  const [viewingEntry, setViewingEntry] = useState(null)
   const todayEntry = allHw.find(e => e.createdAt.slice(0, 10) === todayISO())
 
   const [moment,  setMoment]  = useState('')
@@ -477,6 +523,11 @@ function HomeworkView({ onBack }) {
   const [story,   setStory]   = useState('')
   const [saved,   setSaved]   = useState(false)
   const streak = getStreak(allHw)
+
+  function handleDayClick(dateStr) {
+    const entry = allHw.find(e => e.createdAt.slice(0, 10) === dateStr)
+    if (entry) setViewingEntry(entry)
+  }
 
   function handleSave() {
     if (!moment.trim()) return
@@ -496,6 +547,37 @@ function HomeworkView({ onBack }) {
   const displayEntry = saved
     ? { moment, tension, story, createdAt: new Date().toISOString() }
     : todayEntry
+
+  if (viewingEntry) {
+    return (
+      <div className="section-view">
+        <div className="editor-topbar">
+          <button className="btn-ghost" onClick={() => setViewingEntry(null)}>← back</button>
+          <span className="entry-read-date">{formatDate(viewingEntry.createdAt)}</span>
+        </div>
+        <div className="section-body">
+          <div className="hw-entry-display">
+            <div className="hw-display-block">
+              <span className="section-label">✦ The moment</span>
+              <p className="hw-display-text">{viewingEntry.moment}</p>
+            </div>
+            {viewingEntry.tension && (
+              <div className="hw-display-block">
+                <span className="section-label">✦ What made it interesting</span>
+                <p className="hw-display-text">{viewingEntry.tension}</p>
+              </div>
+            )}
+            {viewingEntry.story && (
+              <div className="hw-display-block">
+                <span className="section-label">✦ The story</span>
+                <p className="hw-display-text hw-story-text">{viewingEntry.story}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="section-view">
@@ -577,7 +659,7 @@ function HomeworkView({ onBack }) {
           </div>
         )}
 
-        <CalendarView entries={allHw} />
+        <CalendarView entries={allHw} onDayClick={handleDayClick} />
       </div>
     </div>
   )

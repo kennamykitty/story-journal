@@ -409,6 +409,33 @@ button {
 .entry-log-meta span { font-size: 13px; color: var(--muted); }
 .entry-log-prompt { font-size: 13px; color: var(--muted); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+.entry-log-clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.entry-log-clickable:hover { background: var(--surface-2); }
+.entry-log-tap { font-size: 12px; color: var(--accent); opacity: 0.7; }
+
+/* ── Reading view ───────────────────────────────────────────── */
+.entry-read-date { font-size: 13px; color: var(--muted); }
+.entry-read-prompt {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  line-height: 1.5;
+  color: var(--muted);
+  font-style: italic;
+}
+.entry-read-content { display: flex; flex-direction: column; gap: 18px; }
+.entry-read-content p { font-family: var(--font-serif); font-size: 17px; line-height: 1.85; color: var(--text); }
+.entry-read-meta { font-size: 13px; color: var(--muted); }
+
+.cal-clickable {
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.cal-clickable:hover { background: var(--surface-2); }
+
 .timed-prompt-bar {
   max-width: 680px;
   margin: 32px auto 0;
