@@ -262,7 +262,7 @@ function HomeView({ nav }) {
       {showInstall && <InstallBanner onDismiss={dismissInstall} />}
       <header className="home-header">
         <div>
-          <h1 className="app-title">Storytelling</h1>
+          <h1 className="app-title">Storydrafts</h1>
           <p className="app-subtitle">A daily storytelling practice</p>
         </div>
         <button className="btn-ghost small" onClick={() => nav('backup')}>Backup</button>

@@ -11,9 +11,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,png,svg,ico}'],
       },
       manifest: {
-        name: 'Story Journal',
-        short_name: 'Story Journal',
-        description: 'A private journaling app for practicing storytelling. Your entries never leave your computer.',
+        name: 'Storydrafts',
+        short_name: 'Drafts',
+        description: 'A daily storytelling practice. Write, find stories in your day, and keep them.',
         theme_color: '#2d5a27',
         background_color: '#faf9f7',
         display: 'standalone',
