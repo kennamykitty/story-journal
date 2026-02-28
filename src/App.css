@@ -493,6 +493,34 @@ button {
 .backup-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .backup-msg { font-size: 14px; color: var(--success); }
 
+/* ── Home history link ──────────────────────────────────────── */
+.home-history-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.home-history-link:hover { background: var(--surface); border-color: var(--muted); }
+.home-history-label { font-size: 14px; color: var(--muted); }
+.home-history-cta { font-size: 14px; color: var(--accent); font-weight: 500; }
+
+/* ── History entry cards ────────────────────────────────────── */
+.history-entry-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 /* ── Mobile ─────────────────────────────────────────────────── */
 @media (max-width: 600px) {
   .home { padding: 36px 16px 48px; gap: 28px; }

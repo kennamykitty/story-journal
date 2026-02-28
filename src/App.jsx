@@ -182,12 +182,13 @@ function CalendarView({ entries, onDayClick }) {
 // ── Home ───────────────────────────────────────────────────────────────
 
 function HomeView({ nav }) {
-  const pagesCount = load(KEYS.pages).length
-  const hwEntries  = load(KEYS.homework)
-  const streak     = getStreak(hwEntries)
-  const doneToday  = hwEntries.some(e => e.createdAt.slice(0, 10) === todayISO())
+  const pagesCount   = load(KEYS.pages).length
+  const hwEntries    = load(KEYS.homework)
+  const streak       = getStreak(hwEntries)
+  const doneToday    = hwEntries.some(e => e.createdAt.slice(0, 10) === todayISO())
   const promptsCount = load(KEYS.prompts).length
-  const tip        = tips[Math.floor(Math.random() * tips.length)]
+  const totalEntries = pagesCount + promptsCount + hwEntries.length
+  const tip          = tips[Math.floor(Math.random() * tips.length)]
 
   return (
     <div className="home">
@@ -235,6 +236,121 @@ function HomeView({ nav }) {
           <span className="card-cta">{doneToday ? 'View today →' : 'Start →'}</span>
         </div>
 
+      </div>
+
+      <div className="home-history-link" onClick={() => nav('history')}>
+        <span className="home-history-label">
+          {totalEntries > 0 ? `${totalEntries} past ${totalEntries === 1 ? 'entry' : 'entries'}` : 'Past entries'}
+        </span>
+        <span className="home-history-cta">View calendar →</span>
+      </div>
+    </div>
+  )
+}
+
+// ── All Entries (history calendar) ─────────────────────────────────────
+
+const TYPE_LABELS = {
+  pages:    'Morning Pages',
+  prompts:  'Writing Prompts',
+  homework: 'Homework for Life',
+}
+
+function EntryCard({ entry }) {
+  return (
+    <div className="history-entry-card">
+      <span className="section-label">✦ {TYPE_LABELS[entry.type]}</span>
+
+      {entry.type === 'pages' && (
+        <>
+          <div className="entry-read-meta">{entry.wordCount} words · {entry.duration} min</div>
+          <div className="entry-read-content">
+            {entry.content.split('\n').map((p, i) => p.trim() ? <p key={i}>{p}</p> : <br key={i} />)}
+          </div>
+        </>
+      )}
+
+      {entry.type === 'prompts' && (
+        <>
+          <p className="entry-read-prompt">"{entry.prompt}"</p>
+          <div className="entry-read-content">
+            {entry.content.split('\n').map((p, i) => p.trim() ? <p key={i}>{p}</p> : <br key={i} />)}
+          </div>
+          <div className="entry-read-meta">{wordCount(entry.content)} words</div>
+        </>
+      )}
+
+      {entry.type === 'homework' && (
+        <div className="hw-entry-display">
+          <div className="hw-display-block">
+            <span className="section-label">✦ The moment</span>
+            <p className="hw-display-text">{entry.moment}</p>
+          </div>
+          {entry.tension && (
+            <div className="hw-display-block">
+              <span className="section-label">✦ What made it interesting</span>
+              <p className="hw-display-text">{entry.tension}</p>
+            </div>
+          )}
+          {entry.story && (
+            <div className="hw-display-block">
+              <span className="section-label">✦ The story</span>
+              <p className="hw-display-text hw-story-text">{entry.story}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AllEntriesView({ onBack }) {
+  const [viewingDate, setViewingDate] = useState(null)
+
+  const allEntries = [
+    ...load(KEYS.pages).map(e    => ({ ...e, type: 'pages'    })),
+    ...load(KEYS.prompts).map(e  => ({ ...e, type: 'prompts'  })),
+    ...load(KEYS.homework).map(e => ({ ...e, type: 'homework' })),
+  ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+  const entriesByDate = {}
+  allEntries.forEach(e => {
+    const d = e.createdAt.slice(0, 10)
+    if (!entriesByDate[d]) entriesByDate[d] = []
+    entriesByDate[d].push(e)
+  })
+
+  if (viewingDate) {
+    const dayEntries = entriesByDate[viewingDate] || []
+    // parse as noon local to avoid timezone-off-by-one
+    const dateLabel  = formatDate(viewingDate + 'T12:00:00')
+    return (
+      <div className="section-view">
+        <div className="editor-topbar">
+          <button className="btn-ghost" onClick={() => setViewingDate(null)}>← back</button>
+          <span className="entry-read-date">{dateLabel}</span>
+        </div>
+        <div className="section-body">
+          {dayEntries.map(e => <EntryCard key={e.id} entry={e} />)}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="section-view">
+      <div className="editor-topbar">
+        <button className="btn-ghost" onClick={onBack}>← back</button>
+      </div>
+      <div className="section-body">
+        <div className="section-intro">
+          <h2 className="section-title">Past Entries</h2>
+          {allEntries.length > 0
+            ? <p className="section-subtitle">{allEntries.length} {allEntries.length === 1 ? 'entry' : 'entries'} across all practices — tap a day to read</p>
+            : <p className="section-subtitle">No entries yet. Start writing to see your history here.</p>
+          }
+        </div>
+        {allEntries.length > 0 && <CalendarView entries={allEntries} onDayClick={setViewingDate} />}
       </div>
     </div>
   )
@@ -714,6 +830,7 @@ export default function App() {
       {view === 'pages'    && <MorningPagesView      onBack={() => setView('home')} />}
       {view === 'prompts'  && <WritingPromptsView    onBack={() => setView('home')} />}
       {view === 'homework' && <HomeworkView          onBack={() => setView('home')} />}
+      {view === 'history'  && <AllEntriesView        onBack={() => setView('home')} />}
       {view === 'backup'   && <BackupView            onBack={() => setView('home')} />}
     </>
   )
