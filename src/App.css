@@ -493,6 +493,41 @@ button {
 .backup-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 .backup-msg { font-size: 14px; color: var(--success); }
 
+/* ── Streak reminder ────────────────────────────────────────── */
+.streak-reminder {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: var(--accent-light);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--accent);
+}
+.streak-reminder-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* ── Delete button ──────────────────────────────────────────── */
+.btn-delete {
+  font-size: 13px;
+  color: var(--danger);
+  opacity: 0.6;
+  padding: 10px 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
+}
+.btn-delete:hover { opacity: 1; }
+
 /* ── Install banner ─────────────────────────────────────────── */
 .install-banner {
   background: var(--accent);

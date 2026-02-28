@@ -233,13 +233,20 @@ function CalendarView({ entries, onDayClick }) {
 // ── Home ───────────────────────────────────────────────────────────────
 
 function HomeView({ nav }) {
-  const pagesCount   = load(KEYS.pages).length
-  const hwEntries    = load(KEYS.homework)
-  const streak       = getStreak(hwEntries)
-  const doneToday    = hwEntries.some(e => e.createdAt.slice(0, 10) === todayISO())
-  const promptsCount = load(KEYS.prompts).length
-  const totalEntries = pagesCount + promptsCount + hwEntries.length
-  const tip          = tips[Math.floor(Math.random() * tips.length)]
+  const pagesEntries  = load(KEYS.pages)
+  const promptEntries = load(KEYS.prompts)
+  const hwEntries     = load(KEYS.homework)
+  const pagesCount    = pagesEntries.length
+  const promptsCount  = promptEntries.length
+  const streak        = getStreak(hwEntries)
+  const doneToday     = hwEntries.some(e => e.createdAt.slice(0, 10) === todayISO())
+  const totalEntries  = pagesCount + promptsCount + hwEntries.length
+  const tip           = tips[Math.floor(Math.random() * tips.length)]
+  const wroteToday    = totalEntries > 0 && (
+    pagesEntries.some(e  => e.createdAt.slice(0, 10) === todayISO()) ||
+    promptEntries.some(e => e.createdAt.slice(0, 10) === todayISO()) ||
+    hwEntries.some(e     => e.createdAt.slice(0, 10) === todayISO())
+  )
 
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || !!window.navigator.standalone
   const [showInstall, setShowInstall] = useState(
@@ -260,6 +267,13 @@ function HomeView({ nav }) {
         </div>
         <button className="btn-ghost small" onClick={() => nav('backup')}>Backup</button>
       </header>
+
+      {totalEntries > 0 && !wroteToday && (
+        <div className="streak-reminder">
+          <span className="streak-reminder-dot" />
+          <span>No entry yet today — keep the practice going.</span>
+        </div>
+      )}
 
       <div className="tip-banner">
         <span className="section-label">✦ Craft tip</span>
@@ -462,6 +476,14 @@ function MorningPagesView({ onBack }) {
 
   const timerWarning = timerLeft !== null && timerLeft <= 60
 
+  function handleDeletePage(entry) {
+    if (!confirm('Delete this session? This can\'t be undone.')) return
+    const updated = entries.filter(e => e.id !== entry.id)
+    save(KEYS.pages, updated)
+    setEntries(updated)
+    setViewingEntry(null)
+  }
+
   // Reading a past entry
   if (viewingEntry) {
     return (
@@ -475,6 +497,7 @@ function MorningPagesView({ onBack }) {
           <div className="entry-read-content">
             {viewingEntry.content.split('\n').map((p, i) => p.trim() ? <p key={i}>{p}</p> : <br key={i} />)}
           </div>
+          <button className="btn-delete" onClick={() => handleDeletePage(viewingEntry)}>Delete entry</button>
         </div>
       </div>
     )
@@ -611,6 +634,14 @@ function WritingPromptsView({ onBack }) {
     setSaved(true)
   }
 
+  function handleDeletePrompt(entry) {
+    if (!confirm('Delete this entry? This can\'t be undone.')) return
+    const updated = entries.filter(e => e.id !== entry.id)
+    save(KEYS.prompts, updated)
+    setEntries(updated)
+    setViewingEntry(null)
+  }
+
   if (viewingEntry) {
     return (
       <div className="section-view">
@@ -624,6 +655,7 @@ function WritingPromptsView({ onBack }) {
             {viewingEntry.content.split('\n').map((p, i) => p.trim() ? <p key={i}>{p}</p> : <br key={i} />)}
           </div>
           <p className="entry-read-meta">{wordCount(viewingEntry.content)} words</p>
+          <button className="btn-delete" onClick={() => handleDeletePrompt(viewingEntry)}>Delete entry</button>
         </div>
       </div>
     )
@@ -725,6 +757,14 @@ function HomeworkView({ onBack }) {
     ? { moment, tension, story, createdAt: new Date().toISOString() }
     : todayEntry
 
+  function handleDeleteHw(entry) {
+    if (!confirm('Delete this entry? This can\'t be undone.')) return
+    const updated = allHw.filter(e => e.id !== entry.id)
+    save(KEYS.homework, updated)
+    setAllHw(updated)
+    setViewingEntry(null)
+  }
+
   if (viewingEntry) {
     return (
       <div className="section-view">
@@ -751,6 +791,7 @@ function HomeworkView({ onBack }) {
               </div>
             )}
           </div>
+          <button className="btn-delete" onClick={() => handleDeleteHw(viewingEntry)}>Delete entry</button>
         </div>
       </div>
     )
